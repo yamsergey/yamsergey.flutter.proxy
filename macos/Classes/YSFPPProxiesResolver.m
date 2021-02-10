@@ -129,4 +129,19 @@ static void ResultCallback(void* client, CFArrayRef proxies, CFErrorRef error)
     [self.proxies addObject:proxy];
 }
 
+- (NSString*) proxiesAsJson {
+    NSString *builder = @"[";
+    
+    for (YSFPPProxy *proxy in self.proxies) {
+        builder = [builder stringByAppendingString:[proxy description]];
+        if ([self.proxies lastObject] != proxy) {
+            builder = [builder stringByAppendingString:@","];
+        }
+    }
+    
+    builder = [builder stringByAppendingString:@"]"];
+    
+    return builder;
+}
+
 @end

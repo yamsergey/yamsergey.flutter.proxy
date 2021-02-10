@@ -13,14 +13,10 @@ public class PlatformProxyPlugin: NSObject, FlutterPlugin {
         case "getPlatformProxy":
             if let targetUrl = (call.arguments as? [String:String])?["url"] {
                 let resolver = YSFPPProxiesResolver()
-                
-                if (resolver.resolve(targetUrl)) {
-                    result("\(resolver.proxies)")
-                } else {
-                    result("")
-                }
+                resolver.resolve(targetUrl)
+                result(resolver.proxiesAsJson())
             } else {
-                result("")
+                result("[]")
             }
         default:
             result(FlutterMethodNotImplemented)

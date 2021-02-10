@@ -14,13 +14,10 @@
         NSString *targetUrl = [call arguments][@"url"];
         if (targetUrl) {
             YSFPPProxiesResolver *resolver = [[YSFPPProxiesResolver alloc] init];
-            if ([resolver resolve:@"http://google.com"]) {
-                result([NSString stringWithFormat:@"%@", resolver.proxies]);
-            } else {
-                result(@"");
-            }
+            [resolver resolve:targetUrl];
+            result([resolver proxiesAsJson]);
         } else {
-            result(@"");
+            result(@"[]");
         }
     } else {
         result(FlutterMethodNotImplemented);

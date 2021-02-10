@@ -19,6 +19,7 @@ typedef NSMutableArray<YSFPPProxy*> YSFPPProxiesArray;
 @property (readonly) YSFPPProxiesArray* proxies;
 
 - (BOOL) resolve: (NSString*)url;
+- (NSString*) proxiesAsJson;
 - (void) appendProxy: (YSFPPProxy*) proxy;
 
 @end

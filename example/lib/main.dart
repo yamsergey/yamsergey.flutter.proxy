@@ -27,7 +27,7 @@ class _MyAppState extends State<MyApp> {
     String platformVersion;
     // Platform messages may fail, so we use a try/catch PlatformException.
     try {
-      platformVersion = await PlatformProxy().getPlatformProxy(url: "http://google.com");
+      platformVersion = await PlatformProxy().getPlatformProxy(url: "https://google.com");
     } on PlatformException {
       platformVersion = 'Failed to get platform version.';
     }
@@ -47,10 +47,10 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       home: Scaffold(
         appBar: AppBar(
-          title: const Text('Plugin example app'),
+          title: const SelectableText('Plugin example app'),
         ),
         body: Center(
-          child: Text('Running on: $_platformVersion\n'),
+          child: SelectableText('Running on: $_platformVersion\n'),
         ),
       ),
     );

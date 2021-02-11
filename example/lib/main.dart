@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'dart:async';
 
@@ -6,6 +8,7 @@ import 'package:platform_proxy/platform_proxy.dart';
 
 void main() {
   runApp(MyApp());
+  var client = HttpClient();
 }
 
 class MyApp extends StatefulWidget {

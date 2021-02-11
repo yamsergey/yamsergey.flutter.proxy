@@ -20,4 +20,33 @@ class Proxy {
   String toString() {
     return '{"host":"$host", "port":"$port", "type":"$type", "user":"$user", "password":"$password"}';
   }
+
+  bool operator ==(other) {
+    return (other is Proxy && other.toString() == this.toString());
+  }
+
+  @override
+  int get hashCode {
+    return this.toString().hashCode;
+  }
+
+  int get priority {
+    if (type == 'http') {
+      return 2;
+    } else if (type == 'https') {
+      return 1;
+    } else {
+      return 0;
+    }
+  }
+
+  String get pacString {
+    if (type == 'http') {
+      return 'PROXY $host:$port';
+    } else if (type == 'https') {
+      return 'PROXY $host:$port';
+    } else {
+      return 'DIRECT';
+    }
+  }
 }

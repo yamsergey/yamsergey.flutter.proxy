@@ -4,11 +4,13 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 
 import 'package:flutter/services.dart';
+import 'package:platform_proxy/PlatformProxyHttpOverrides.dart';
 import 'package:platform_proxy/platform_proxy.dart';
 
 void main() {
+  // WidgetsFlutterBinding.ensureInitialized();
+  // HttpOverrides.global = PlatformProxyHttpOverrides(PlatformProxy());
   runApp(MyApp());
-  var client = HttpClient();
 }
 
 class MyApp extends StatefulWidget {
@@ -18,6 +20,7 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   String _platformVersion = 'Unknown';
+  final client = ProxyAwareHttpClient(client: HttpClient(), platformProxy: PlatformProxy());
 
   @override
   void initState() {
@@ -31,6 +34,7 @@ class _MyAppState extends State<MyApp> {
     // Platform messages may fail, so we use a try/catch PlatformException.
     try {
       platformVersion = (await PlatformProxy().getPlatformProxies(url: "https://google.com")).getProxiesAsPac();
+      client.getUrl(Uri.parse('http://platform.proxy.io')).then((value) => value.close()).then((value) {});
     } on PlatformException {
       platformVersion = 'Failed to get platform version.';
     }
@@ -53,7 +57,12 @@ class _MyAppState extends State<MyApp> {
           title: const SelectableText('Plugin example app'),
         ),
         body: Center(
-          child: SelectableText('Running on: $_platformVersion\n'),
+          child: Column(children:[TextButton(child: Text("Send"), onPressed: () {
+            client.getUrl(Uri.parse('https://google.com')).then((value) { 
+              value.
+              value.close();
+              });
+          }), SelectableText('Running on: $_platformVersion\n')]),
         ),
       ),
     );

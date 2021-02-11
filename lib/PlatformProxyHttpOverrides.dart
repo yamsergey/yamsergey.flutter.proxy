@@ -116,8 +116,16 @@ class ProxyAwareHttpClient {
   }
 
   String _findProxy(Uri url) {
-    print("FIND PROXY $url ${_cache[url.cacheKey]}");
-    return _cache[url.cacheKey];
+    var cacheValue = _cache[url.cacheKey];
+
+    if (cacheValue == null) {
+      // Naive assumption that it's a redirect of previous request which hat to be routed throufh the same proxy
+      _cache[url.cacheKey] = _cache.values.last;
+      cacheValue = _cache[url.cacheKey];
+    }
+
+    print("FIND PROXY $url $cacheValue");
+    return cacheValue;
   }
 
   Future<void> resolveProxies(Uri url) async {

@@ -58,10 +58,7 @@ class _MyAppState extends State<MyApp> {
         ),
         body: Center(
           child: Column(children:[TextButton(child: Text("Send"), onPressed: () {
-            client.getUrl(Uri.parse('https://google.com')).then((value) { 
-              value.
-              value.close();
-              });
+            client.getUrl(Uri.parse('https://google.com')).then((value) => value.close());
           }), SelectableText('Running on: $_platformVersion\n')]),
         ),
       ),

@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 
 import 'package:flutter/services.dart';
-import 'package:platform_proxy/PlatformProxyHttpOverrides.dart';
 import 'package:platform_proxy/platform_proxy.dart';
+import 'package:platform_proxy/proxy_httpclient.dart';
 
 void main() {
   // WidgetsFlutterBinding.ensureInitialized();

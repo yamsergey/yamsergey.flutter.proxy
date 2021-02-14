@@ -12,6 +12,7 @@ class PlatformProxy {
   Future<Iterable<Proxy>> getPlatformProxies({String url}) async {
     final String proxiesJson = await _channel.invokeMethod<dynamic>(
         'getPlatformProxy', <String, String>{'url': url}) as String;
+    print("HHAHAHAHHAH: $proxiesJson");
     var jsonArray = jsonDecode(proxiesJson) as List<dynamic>;
     var proxies = jsonArray
         .map((e) => Proxy.fromJson(e as Map<String, dynamic>))

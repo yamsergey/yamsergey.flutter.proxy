@@ -49,4 +49,16 @@ class Proxy {
       return 'DIRECT';
     }
   }
+
+  String get pacStringWithCredentials {
+    if (user.isEmpty || password.isEmpty) return pacString;
+
+    if (type == 'http') {
+      return 'PROXY $user:$password@$host:$port';
+    } else if (type == 'https') {
+      return 'PROXY $user:$password@$host:$port';
+    } else {
+      return 'DIRECT';
+    }
+  }
 }

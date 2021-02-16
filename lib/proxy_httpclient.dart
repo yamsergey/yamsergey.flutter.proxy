@@ -167,16 +167,15 @@ class ProxyAwareHttpClient implements HttpClient {
     var cacheValue = _cache[url.cacheKey];
 
     if (cacheValue == null) {
-      // Naive assumption that it's a redirect of previous request which hat to be routed throufh the same proxy
+      // Naive assumption that it's a redirect of previous request which has to be routed through the same proxy
       _cache[url.cacheKey] = _cache.values.last;
       cacheValue = _cache[url.cacheKey];
     }
 
-    print("FIND PROXY $url $cacheValue");
     if (cacheValue == null || cacheValue.isEmpty) {
       return null;
     }
-    return cacheValue;
+    return cacheValue ?? HttpClient.findProxyFromEnvironment(url);
   }
 
   Future<void> resolveProxies(Uri url) async {

@@ -184,7 +184,7 @@ class ProxyAwareHttpClient implements HttpClient {
     } else {
       var proxies =
           await _platformProxy.getPlatformProxies(url: url.toString());
-      _cache[url.cacheKey] = proxies.getProxiesAsPac();
+      _cache[url.cacheKey] = proxies.getProxiesAsPacWithCredentials();
       return;
     }
   }

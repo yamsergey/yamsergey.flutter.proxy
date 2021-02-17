@@ -16,7 +16,7 @@ Different OSes provide different options to configure proxy for user. Table belo
 | Mac OS | &check; | &check; | &check; | &check; |
 | Linux | _in_progress_ | _in_progress_ | _in_progress_ | _in_progress_ |
 
-## platform_proxy plugin support
+## What platform_proxy plugin supports
 
 Table below represent configuration options from _Proxy config matrix_ which suppurted by the plugin.
 

@@ -9,9 +9,9 @@ import 'proxy.dart';
 class PlatformProxy {
   static const MethodChannel _channel = MethodChannel('platform_proxy');
 
-  Future<Iterable<Proxy>> getPlatformProxies({String url}) async {
+  Future<Iterable<Proxy>> getPlatformProxies({String? url}) async {
     final String proxiesJson = await _channel.invokeMethod<dynamic>(
-        'getPlatformProxy', <String, String>{'url': url}) as String;
+        'getPlatformProxy', <String, String?>{'url': url}) as String;
     var jsonArray = jsonDecode(proxiesJson) as List<dynamic>;
     var proxies = jsonArray
         .map((e) => Proxy.fromJson(e as Map<String, dynamic>))
@@ -33,10 +33,10 @@ extension ProxiesAsPacString on Iterable<Proxy> {
 }
 
 class ProxyCredentials {
-  final String host;
-  final int port;
-  final String realm;
-  final HttpClientCredentials credentials;
+  final String? host;
+  final int? port;
+  final String? realm;
+  final HttpClientCredentials? credentials;
 
   ProxyCredentials({this.host, this.port, this.realm, this.credentials});
 }

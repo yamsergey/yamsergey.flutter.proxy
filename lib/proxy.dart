@@ -5,15 +5,20 @@ class Proxy {
   final String user;
   final String password;
 
-  Proxy({this.host, this.port, this.type, this.user, this.password});
+  Proxy(
+      {required this.host,
+      required this.port,
+      required this.type,
+      required this.user,
+      required this.password});
 
   factory Proxy.fromJson(Map<String, dynamic> json) {
     return Proxy(
-        host: json['host'],
-        port: json['port'],
-        type: json['type'],
-        user: json['user'],
-        password: json['password']);
+        host: json['host'] ?? "",
+        port: json['port'] ?? "",
+        type: json['type'] ?? "",
+        user: json['user'] ?? "",
+        password: json['password'] ?? "");
   }
 
   @override

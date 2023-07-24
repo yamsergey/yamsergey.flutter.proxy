@@ -15,6 +15,7 @@
 #include <memory>
 #include <sstream>
 #include <cassert>
+#include <regex>
 
 namespace
 {
@@ -111,7 +112,8 @@ namespace
     auto plugin = std::make_unique<PlatformProxyPlugin>();
 
     channel->SetMethodCallHandler(
-        [plugin_pointer = plugin.get()](const auto &call, auto result) {
+        [plugin_pointer = plugin.get()](const auto &call, auto result)
+        {
           plugin_pointer->HandleMethodCall(call, std::move(result));
         });
 
@@ -160,6 +162,23 @@ void PlatformProxyPluginRegisterWithRegistrar(
   PlatformProxyPlugin::RegisterWithRegistrar(
       flutter::PluginRegistrarManager::GetInstance()
           ->GetRegistrar<flutter::PluginRegistrarWindows>(registrar));
+}
+
+void ParseLpszProxy(std::wstring lpszProxy, std::vector<YSFPPProxy> &proxies, std::wstring urlScheme)
+{
+  std::wsmatch m;
+  // This regular expression has a high probability of responding to the proxy configuration format supported on Windows.
+  // It seems that the user name and password required by the proxy cannot be directly configured in the url on Windows, so it can be ignored
+  std::wregex rx(L"([a-z0-9\\u00a1-\\uffff]+(?:\\.(?:[a-z0-9\\u00a1-\\uffff]-*)*[a-z0-9\\u00a1-\\uffff]+)*\\.[a-z0-9\\u00a1-\\uffff]{1,})(?::(\\d{2,5}))?");
+  while (std::regex_search(lpszProxy, m, rx))
+  {
+    std::wstring host = m[1].str();
+    std::wstring port = m[2].str();
+    // I think the urlScheme here should not be the urlScheme of the visited url,
+    // but the urlScheme of the proxy configuration, but it used to be the same for the time being
+    proxies.push_back(YSFPPProxy::YSFPPProxy(host, port, L"", L"", urlScheme));
+    lpszProxy = m.suffix().str();
+  }
 }
 
 std::vector<YSFPPProxy> YSFPPProxyResolver::resolveProxies(std::wstring url)
@@ -223,12 +242,7 @@ std::vector<YSFPPProxy> YSFPPProxyResolver::resolveProxies(std::wstring url)
     {
       if (ProxyInfo.lpszProxy)
       {
-        std::wstring value = ProxyInfo.lpszProxy;
-        std::wstring host = value.substr(0, value.find(L":"));
-        std::wstring port = value.substr(value.find(L":"), value.length());
-
-        proxies.push_back(YSFPPProxy::YSFPPProxy(host, port, L"", L"", urlScheme));
-        proxies.push_back(YSFPPProxy::YSFPPProxy(L"", L"", L"", L"", L"none"));
+        ParseLpszProxy(ProxyInfo.lpszProxy, proxies, urlScheme);
       }
     }
 
@@ -241,20 +255,17 @@ std::vector<YSFPPProxy> YSFPPProxyResolver::resolveProxies(std::wstring url)
 
     if (ProxyConfig.lpszProxy)
     {
-      std::wstring value = ProxyConfig.lpszProxy;
-      std::wstring host = value.substr(0, value.find(L":"));
-      std::wstring port = value.substr(value.find(L":"), value.length());
       if (ProxyConfig.lpszProxyBypass)
       {
         std::wstring bypass = ProxyConfig.lpszProxyBypass;
         if (bypass.find(urlComp.lpszHostName) == -1)
         {
-          proxies.push_back(YSFPPProxy::YSFPPProxy(host, port, L"", L"", urlScheme));
+          ParseLpszProxy(ProxyConfig.lpszProxy, proxies, urlScheme);
         }
       }
       else
       {
-        proxies.push_back(YSFPPProxy::YSFPPProxy(host, port, L"", L"", urlScheme));
+        ParseLpszProxy(ProxyConfig.lpszProxy, proxies, urlScheme);
       }
     }
   }

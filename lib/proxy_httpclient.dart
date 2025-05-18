@@ -7,7 +7,8 @@ class ProxyAwareHttpClient implements HttpClient {
   final PlatformProxy _platformProxy;
   final Map<String, String> _cache = {};
 
-  ProxyAwareHttpClient({required HttpClient client, required PlatformProxy platformProxy})
+  ProxyAwareHttpClient(
+      {required HttpClient client, required PlatformProxy platformProxy})
       : _delegate = client,
         _platformProxy = platformProxy {
     _delegate.findProxy = _findProxy as String Function(Uri)?;
@@ -163,7 +164,7 @@ class ProxyAwareHttpClient implements HttpClient {
   @override
   set userAgent(String? value) => _delegate.userAgent = value;
 
-  String? _findProxy(Uri url) {
+  String _findProxy(Uri url) {
     var cacheValue = _cache[url.cacheKey];
 
     if (cacheValue == null) {
@@ -173,9 +174,9 @@ class ProxyAwareHttpClient implements HttpClient {
     }
 
     if (cacheValue == null || cacheValue.isEmpty) {
-      return null;
+      return HttpClient.findProxyFromEnvironment(url);
     }
-    return cacheValue ?? HttpClient.findProxyFromEnvironment(url);
+    return cacheValue;
   }
 
   Future<void> resolveProxies(Uri url) async {
@@ -190,7 +191,10 @@ class ProxyAwareHttpClient implements HttpClient {
   }
 
   @override
-  set connectionFactory(Future<ConnectionTask<Socket>> Function(Uri url, String? proxyHost, int? proxyPort)? f) {
+  set connectionFactory(
+      Future<ConnectionTask<Socket>> Function(
+              Uri url, String? proxyHost, int? proxyPort)?
+          f) {
     _delegate.connectionFactory = f;
   }
 

@@ -1,0 +1,22 @@
+PODS:
+  - Flutter (1.0.0)
+  - platform_proxy (0.0.1):
+    - Flutter
+
+DEPENDENCIES:
+  - Flutter (from `Flutter`)
+  - platform_proxy (from `.symlinks/plugins/platform_proxy/ios`)
+
+EXTERNAL SOURCES:
+  Flutter:
+    :path: Flutter
+  platform_proxy:
+    :path: ".symlinks/plugins/platform_proxy/ios"
+
+SPEC CHECKSUMS:
+  Flutter: e0871f40cf51350855a761d2e70bf5af5b9b5de7
+  platform_proxy: 1946943760f2d11ed6785bd2f74dbc2c0bf29711
+
+PODFILE CHECKSUM: 4305caec6b40dde0ae97be1573c53de1882a07e5
+
+COCOAPODS: 1.16.2

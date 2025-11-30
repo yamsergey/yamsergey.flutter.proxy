@@ -1,0 +1,85 @@
+# Platform Proxy - Cursor Coding Guidelines
+
+## Project Type
+Flutter plugin with native implementations for Android (Java), iOS/macOS (Swift), and Windows (C++).
+
+## Key Patterns
+
+### Method Channel Communication
+- Channel name: `"platform_proxy"`
+- All platform calls go through `getPlatformProxy` method
+- Arguments: `{"url": "<target_url>"}`
+- Returns: JSON array of proxy objects
+
+### Proxy JSON Format (All Platforms Must Match)
+```json
+{"host":"<string>","port":"<string>","type":"http|https|none","user":"<string>","password":"<string>"}
+```
+
+### Naming Conventions
+- Native class prefix: `YSFPP` (YamSergey Flutter Platform Proxy)
+- Dart: `camelCase` methods, `PascalCase` classes
+- Use `final` and `required` for null safety
+
+## File Structure Quick Reference
+```
+lib/platform_proxy.dart    → Main plugin class, extensions
+lib/proxy.dart             → Proxy data model
+lib/proxy_httpclient.dart  → ProxyAwareHttpClient wrapper
+
+android/.../PlatformProxyPlugin.java → Android entry point
+android/.../ProxyResolver.java       → Java.net.ProxySelector wrapper
+android/.../ProxyStringifier.java    → JSON serialization
+
+ios/Classes/PlatformProxyPlugin.swift    → iOS entry point
+ios/Classes/YSFPPProxiesResolver.swift   → CFNetwork proxy resolution
+ios/Classes/YSFPPProxy.swift             → Proxy model
+ios/Classes/YSFPPProxyTypes.swift        → Enum types
+
+macos/Classes/  → Same structure as iOS (shared Swift code)
+
+windows/platform_proxy_plugin.cpp    → Windows entry + WinHTTP resolution
+windows/include/.../YSFPPProxy.h     → C++ proxy model
+```
+
+## When Making Changes
+
+### Adding Fields to Proxy Model
+1. Update `lib/proxy.dart` - add field + update `fromJson()`
+2. Update ALL native implementations to output new field in JSON
+3. Provide default value for backward compatibility
+
+### Platform-Specific Code
+- iOS/macOS: Use CFNetwork APIs (`CFNetworkCopySystemProxySettings`, `CFNetworkCopyProxiesForURL`)
+- Android: Use `ProxySelector.getDefault().select(URI)`
+- Windows: Use WinHTTP APIs (`WinHttpGetIEProxyConfigForCurrentUser`, `WinHttpGetProxyForUrl`)
+
+### Error Handling
+- Return empty array `[]` on errors, never throw/crash
+- Handle null URLs gracefully
+- Validate inputs before native calls
+
+## Platform Support Matrix
+| Platform | Manual | Credentials | Bypass | PAC |
+|----------|--------|-------------|--------|-----|
+| Android  | ✓      | ✗           | ✓      | ✓   |
+| iOS      | ✓      | ✓           | ✓      | ✓   |
+| macOS    | ✓      | ✓           | ✓      | ✓   |
+| Windows  | ✓      | ✗           | ✓      | ✓   |
+| Linux    | WIP    | WIP         | WIP    | WIP |
+
+## Known Issues
+- Dart SDK #44971: `findProxy` is sync but proxy resolution is async
+- Use `ProxyAwareHttpClient` as workaround (prefetches proxy config)
+
+## Testing
+```bash
+flutter test                    # Run unit tests
+cd example && flutter run       # Test example app
+```
+
+## Don't Do
+- Don't add external dependencies (plugin is dependency-free)
+- Don't change method channel name (breaks existing integrations)
+- Don't output different JSON schemas per platform
+- Don't block on proxy resolution in synchronous methods

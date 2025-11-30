@@ -1,0 +1,299 @@
+# Platform Proxy - Flutter Plugin Development Guidelines
+
+## Project Overview
+
+**Platform Proxy** is a Flutter plugin that discovers and retrieves system proxy settings across multiple platforms (Android, iOS, macOS, Windows). It addresses Flutter's limited proxy configuration support by providing native platform implementations that query OS-level proxy settings.
+
+### Key Problem Solved
+Flutter's default HTTP client only supports proxy configuration via environment variables (`http_proxy`, `https_proxy`). This plugin bridges the gap by:
+- Reading system proxy settings from native platform APIs
+- Supporting manual proxy, bypass rules, PAC (Proxy Auto-Config), and credentials (where platform supports)
+- Providing proxy configuration in PAC string format compatible with Dart's `HttpClient.findProxy`
+
+### Version & Environment
+- **Current Version**: `0.9.3`
+- **Dart SDK**: `>=2.12.0 <4.0.0`
+- **Flutter**: `>=3.0.0`
+- **Null Safety**: Enabled
+
+### Platform Requirements
+- **Android**: compileSdk 34, minSdk 21, Gradle 8.3, AGP 8.1.0
+- **iOS**: Deployment target 12.0, Swift 5.0
+- **macOS**: Deployment target 10.14, Swift 5.0
+- **Windows**: Windows 10+ for full functionality
+
+---
+
+## Architecture
+
+### Communication Pattern
+The plugin uses Flutter's **MethodChannel** pattern for native communication:
+
+```
+┌─────────────────┐     MethodChannel      ┌──────────────────────┐
+│  Dart/Flutter   │ ◄─────────────────────► │  Native Platform     │
+│  lib/*.dart     │   "platform_proxy"     │  ios/android/macos/  │
+└─────────────────┘                         │  windows/            │
+                                            └──────────────────────┘
+```
+
+### Method Channel Contract
+- **Channel Name**: `"platform_proxy"`
+- **Method**: `"getPlatformProxy"`
+- **Arguments**: `{"url": "<target_url>"}`
+- **Returns**: JSON array of proxy objects
+
+### Proxy JSON Schema
+```json
+{
+  "host": "proxy.example.com",
+  "port": "8080",
+  "type": "http|https|none",
+  "user": "",
+  "password": ""
+}
+```
+
+---
+
+## Project Structure
+
+```
+platform_proxy/
+├── lib/                           # Dart/Flutter code
+│   ├── platform_proxy.dart        # Main plugin class + extensions
+│   ├── proxy.dart                 # Proxy data model
+│   ├── proxy_httpclient.dart      # ProxyAwareHttpClient wrapper
+│   └── platform_proxy_http_overrides.dart
+├── android/                       # Android implementation (Java)
+│   └── src/main/java/io/yamsergey/flutter/platform_proxy/
+│       ├── PlatformProxyPlugin.java
+│       ├── ProxyResolver.java
+│       └── ProxyStringifier.java
+├── ios/                           # iOS implementation (Swift)
+│   └── Classes/
+│       ├── PlatformProxyPlugin.swift
+│       ├── YSFPPProxiesResolver.swift
+│       ├── YSFPPProxy.swift
+│       └── YSFPPProxyTypes.swift
+├── macos/                         # macOS implementation (Swift)
+│   └── Classes/                   # Same structure as iOS
+├── windows/                       # Windows implementation (C++)
+│   ├── platform_proxy_plugin.cpp
+│   └── include/platform_proxy/
+│       ├── YSFPPProxy.h
+│       └── YSFPPProxyResolver.h
+├── example/                       # Example Flutter app
+└── test/                          # Unit tests
+```
+
+---
+
+## Code Style & Conventions
+
+### Dart Code
+- Use **null safety** (`?` for nullable types, `required` for named parameters)
+- Prefer `final` for immutable variables
+- Use extensions for utility methods (see `ProxiesAsPacString`, `ProxiesAsCredentials`)
+- Follow Dart naming conventions: `camelCase` for methods/variables, `PascalCase` for classes
+
+```dart
+// ✓ Good: Null-safe with required parameters
+Proxy({
+  required this.host,
+  required this.port,
+  required this.type,
+  required this.user,
+  required this.password
+});
+
+// ✓ Good: Extension for utility methods
+extension ProxiesAsPacString on Iterable<Proxy> {
+  String getProxiesAsPac() {
+    return this.map((e) => e.pacString).join('; ');
+  }
+}
+```
+
+### Native Code Naming Conventions
+- **Prefix**: `YSFPP` (YamSergey Flutter Platform Proxy)
+- iOS/macOS Swift: `YSFPPProxiesResolver`, `YSFPPProxy`, `YSFPPProxyType`
+- Windows C++: `YSFPPProxy`, `YSFPPProxyResolver`
+
+### JSON Serialization
+All platforms must return proxy data in consistent JSON format:
+```dart
+// Dart model must match native JSON output exactly
+factory Proxy.fromJson(Map<String, dynamic> json) {
+  return Proxy(
+    host: json['host'] ?? "",
+    port: json['port'] ?? "",
+    type: json['type'] ?? "",
+    user: json['user'] ?? "",
+    password: json['password'] ?? ""
+  );
+}
+```
+
+---
+
+## Platform Implementation Details
+
+### Android (Java)
+- Uses `ProxySelector.getDefault().select(URI)` for proxy resolution
+- Package: `io.yamsergey.flutter.platform_proxy`
+- Min SDK: 16, Compile SDK: 30
+- **Credentials NOT supported** by platform API
+
+```java
+// Key pattern: Delegate to ProxyResolver, stringify results
+List<Proxy> proxies = proxyResolver.resolve(url);
+ProxyStringifier stringifier = new ProxyStringifier(proxies);
+result.success(stringifier.stringify(URI.create(url)));
+```
+
+### iOS & macOS (Swift)
+- Uses `CFNetworkCopySystemProxySettings()` and `CFNetworkCopyProxiesForURL()`
+- **Credentials supported** via Keychain (stub implementation exists)
+- Shared code structure between iOS and macOS
+
+```swift
+// Key pattern: Resolve system settings, iterate proxy types
+guard let settings = CFNetworkCopySystemProxySettings()?.takeRetainedValue() as? [String: Any] else { return false }
+let proxiesUnmanaged = CFNetworkCopyProxiesForURL(targetUrl as CFURL, settings as CFDictionary)
+```
+
+### Windows (C++)
+- Uses WinHTTP API: `WinHttpGetIEProxyConfigForCurrentUser()`, `WinHttpGetProxyForUrl()`
+- Supports PAC auto-detection and manual proxy configuration
+- Requires Windows 10+ for full functionality
+- **Credentials NOT supported** (cannot configure in Windows proxy settings)
+
+```cpp
+// Key pattern: Check IE proxy config, resolve with WinHTTP
+WINHTTP_CURRENT_USER_IE_PROXY_CONFIG ProxyConfig = {};
+if (WinHttpGetIEProxyConfigForCurrentUser(&ProxyConfig)) {
+  // Handle auto-config URL or manual proxy
+}
+```
+
+---
+
+## Adding New Features
+
+### Adding New Platform Support (e.g., Linux)
+1. Create directory structure: `linux/Classes/`
+2. Register plugin in `pubspec.yaml`:
+   ```yaml
+   flutter:
+     plugin:
+       platforms:
+         linux:
+           pluginClass: PlatformProxyPlugin
+   ```
+3. Implement method channel handler with `getPlatformProxy` method
+4. Return JSON array matching the proxy schema
+
+### Modifying Proxy Model
+1. Update `lib/proxy.dart` - the `Proxy` class
+2. Update `fromJson()` factory to handle new fields
+3. Update all native implementations to include new fields in JSON output
+4. Ensure backward compatibility (default values for new fields)
+
+### Adding New Method Channel Methods
+1. Define method name constant
+2. Add handler in Dart (`platform_proxy.dart`)
+3. Implement in ALL native platforms (iOS, macOS, Android, Windows)
+
+---
+
+## Testing Guidelines
+
+### Unit Tests
+- Located in `test/` directory
+- Use `flutter_test` package
+- Mock the MethodChannel for isolated testing:
+
+```dart
+setUp(() {
+  channel.setMockMethodCallHandler((MethodCall methodCall) async {
+    return '[{"host":"proxy.test","port":"8080","type":"http","user":"","password":""}]';
+  });
+});
+```
+
+### Integration Testing
+- Use the `example/` app for manual testing
+- Test on all target platforms
+- Verify proxy resolution for:
+  - No proxy configured (should return empty or `type: "none"`)
+  - Manual proxy configured
+  - PAC auto-config
+  - Bypass rules
+
+---
+
+## Known Limitations & TODOs
+
+1. **Dart SDK Issue**: `findProxy` is synchronous but proxy resolution requires async platform calls
+   - Tracked: https://github.com/dart-lang/sdk/issues/44971
+   - Workaround: Use `ProxyAwareHttpClient` which prefetches proxy config
+
+2. **Linux**: Not implemented (marked as `_in_progress_`)
+
+3. **Credentials**:
+   - ✓ Supported: iOS, macOS
+   - ✗ Not supported: Android, Windows (platform limitation)
+
+4. **Windows < 10**: Limited/no support
+
+---
+
+## Common Tasks
+
+### Running Tests
+```bash
+flutter test
+```
+
+### Building Example App
+```bash
+cd example
+flutter run
+```
+
+### Validating iOS/macOS Podspec
+```bash
+pod lib lint ios/platform_proxy.podspec
+pod lib lint macos/platform_proxy.podspec
+```
+
+### Publishing
+1. Update version in `pubspec.yaml`
+2. Update `CHANGELOG.md`
+3. Run `flutter pub publish --dry-run`
+4. Publish: `flutter pub publish`
+
+---
+
+## Dependencies & Requirements
+
+### Development Requirements
+- Flutter SDK
+- Xcode (for iOS/macOS)
+- Android Studio / Android SDK
+- Visual Studio with C++ workload (for Windows)
+
+### Runtime Dependencies
+- `flutter` SDK only (no external packages)
+
+---
+
+## Code Review Checklist
+
+- [ ] Null safety properly handled
+- [ ] JSON output matches schema across all platforms
+- [ ] Error cases return empty array `[]` instead of crashing
+- [ ] No hardcoded strings for method names (use constants)
+- [ ] Memory properly managed in native code (especially Windows C++)
+- [ ] Backward compatible with existing proxy format

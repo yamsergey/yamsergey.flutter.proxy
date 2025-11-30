@@ -1,6 +1,6 @@
 name: platform_proxy
 description: Platform's proxy settings discovery plugin.
-version: 0.9.2-nullsafe
+version: 0.9.3
 homepage: https://gitlab.com/yamsergey/platform_proxy
 
 environment:

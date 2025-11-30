@@ -3,8 +3,8 @@
 #
 # Setup required:
 # 1. Go to https://pub.dev/packages/platform_proxy/admin
-# 2. Enable "Automated publishing" 
-# 3. Add GitHub repository and grant publishing permissions
+# 2. Enable "Automated publishing" from GitHub Actions
+# 3. Add repository: yamsergey/yamsergey.flutter.proxy
 #
 # See: https://dart.dev/tools/pub/automated-publishing
 
@@ -18,18 +18,23 @@ on:
       # Matches: 1.0.0-beta, 1.0.0-nullsafe, 0.9.3-rc1, etc.
       - '[0-9]+.[0-9]+.[0-9]+-*'
 
-# Permissions required for OIDC token authentication with pub.dev
-permissions:
-  id-token: write  # Required for authentication with pub.dev
-
 jobs:
   publish:
     name: Publish to pub.dev
     runs-on: ubuntu-latest
     
+    # Configures the environment for OIDC-based authentication with pub.dev
+    environment: pub.dev
+    
+    permissions:
+      id-token: write  # Required for OIDC token authentication with pub.dev
+    
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Setup Dart SDK
+        uses: dart-lang/setup-dart@v1
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -50,7 +55,7 @@ jobs:
         run: flutter test
 
       - name: Verify package score
-        run: flutter pub publish --dry-run
+        run: dart pub publish --dry-run
 
       - name: Publish to pub.dev
-        run: flutter pub publish --force
+        run: dart pub publish --force

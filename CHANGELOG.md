@@ -1,3 +1,7 @@
+## 0.9.4
+
+* Update repository URL to GitHub
+
 ## 0.9.3
 
 Update for Flutter 3.x / Dart 3.x compatibility:

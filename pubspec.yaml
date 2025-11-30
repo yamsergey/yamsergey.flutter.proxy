@@ -1,7 +1,8 @@
 name: platform_proxy
 description: Platform's proxy settings discovery plugin.
-version: 0.9.3
-homepage: https://gitlab.com/yamsergey/platform_proxy
+version: 0.9.4
+repository: https://github.com/yamsergey/yamsergey.flutter.proxy
+issue_tracker: https://github.com/yamsergey/yamsergey.flutter.proxy/issues
 
 environment:
   sdk: '>=2.12.0 <4.0.0'
